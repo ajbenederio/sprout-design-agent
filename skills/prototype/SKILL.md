@@ -142,11 +142,14 @@ export default createRouter({ history: createWebHashHistory(), routes })
 ```vue
 <script setup>
 import { RouterView } from 'vue-router'
+import { Toaster } from '@/components/ui/toge-sonner'
 </script>
 
 <template>
   <!-- Persistent shell: sidenav, topbar, etc. -->
   <RouterView />
+  <!-- Required: mount once at root or all toast() calls silently no-op -->
+  <Toaster />
 </template>
 ```
 
