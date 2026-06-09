@@ -35,7 +35,7 @@ Before reading wireframes or writing any code, verify the project environment us
 | 3 | **Package compatibility** | Are all design system packages compatible with the confirmed framework and CSS version? Check for peer dependency conflicts (e.g. a design system that pins `tailwindcss@^3` installed alongside v4). Uninstall incompatible packages before proceeding. |
 | 4 | **Explicit dependencies** | Are routing and state management packages explicitly declared in `package.json`? Never assume transitive dependencies — if the prototype needs `vue-router` or `pinia`, they must be listed directly. Install any missing explicit deps before proceeding. |
 | 5 | **Toge sanity check** | This skill assumes Toge (shadcn-vue registry). Verify `components.json` exists and has `registries["@toge"]`. If missing or the registry is absent, surface a warning via `AskUserQuestion` before continuing. **Never call `mcp__design-system-toge__*` tools** — MCP reflects Toge v1 and returns wrong data for Toge. Use CLI installer and installed files in `src/components/ui/` only. |
-| 6 | **Design system components installed** | Before writing any prototype code, verify that design system component files exist in the project (e.g., `src/components/ui/` for Toge). If they don't exist, run the bulk installer first. Then read the installed component files to understand actual prop signatures, variants, and slot names. Component discovery must happen before the first line of prototype code is written. |
+| 6 | **Design system components installed** | Before writing any prototype code, verify that design system component files exist in the project (e.g., `src/components/ui/` for Toge). If they don't exist, run the bulk installer first. For each component you intend to use, read its `index.ts` — not the `.vue` file — to get the exact CVA variant values. The `.vue` file shows structure; the `index.ts` is where valid prop values live. Never infer prop names from shadcn-vue memory; always derive them from the installed file. Component discovery must happen before the first line of prototype code is written. |
 
 **If any check fails: stop immediately. Do not generate any files.**
 
@@ -90,6 +90,26 @@ Every color in the prototype must come from the design system.
 **Token enforcement:** Read `guide/toge-design-system-v2/tokens/token-mapping.yaml` before writing any component. Every default Tailwind color class (`bg-gray-*`, `text-gray-*`, `bg-red-*`, `bg-emerald-*`, `bg-blue-*`, `bg-yellow-*`, `bg-orange-*`) is a violation — replace it with the mapped token before committing output. The design system clears all default Tailwind colors (`--color-*: initial`) so these classes silently render nothing at runtime.
 
 **Known naming collision — read before writing any text class:** Do not combine `text-base` with another font-size utility on the same element. The design system defines `.text-base` as `color: var(--text-base)` in `@layer components`, but Tailwind also defines `text-base` as `font-size: 1rem` in `@layer utilities`. The utilities layer wins for `font-size`, so `text-xs text-base` silently becomes 1rem. Use `text-base` alone when 1rem font-size is acceptable, or use `text-strong` / `text-weak` when a specific font-size is also needed.
+
+**CVA variant rule — read `index.ts` before using any component:** Toge components define their valid prop values in CVA (`class-variance-authority`) inside each component's `index.ts`. These values do NOT match shadcn-vue defaults. CVA silently ignores unrecognised values — no error is thrown, the element just renders unstyled. Before writing any usage of a Toge component, read `src/components/ui/toge-[name]/index.ts` to get the exact valid values.
+
+The most-used component and the most common source of this error:
+
+**TogeButton** (`src/components/ui/toge-button/index.ts`)
+| Prop | Valid values | shadcn equivalent that does NOT exist here |
+|---|---|---|
+| `variant` | `primary` `secondary` `tertiary` `agent` | ~~`ghost`~~ ~~`outline`~~ ~~`destructive`~~ ~~`link`~~ |
+| `tone` | `neutral` `success` `danger` | ~~`default`~~ ~~`warning`~~ ~~`info`~~ |
+| `size` | `small` `medium` `large` `icon-small` `icon-medium` `icon-large` | ~~`sm`~~ ~~`lg`~~ ~~`xs`~~ ~~`icon`~~ |
+
+Common mappings from shadcn → Toge:
+- `variant="ghost"` → `variant="tertiary" tone="neutral"`
+- `variant="outline"` → `variant="secondary" tone="neutral"`
+- `variant="destructive"` → `variant="primary" tone="danger"`
+- `tone="default"` → omit the `tone` prop (default is `success`) or use `tone="neutral"`
+- `size="sm"` → `size="small"`
+
+If the component you need isn't listed here, read its `index.ts` before writing a single usage.
 
 ---
 
